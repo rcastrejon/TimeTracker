@@ -44,7 +44,21 @@ struct MenuBarContentView: View {
         
         // Option to open the main window
         Button("Open Timer Window") {
-            openWindow(id: "main") // Use the ID defined for the Window
+            // --- Explicitly show the Dock icon ---
+            // Set activation policy to regular BEFORE opening the window
+            // to ensure the Dock icon appears.
+            NSApplication.shared.setActivationPolicy(.regular)
+            print("MenuBar: Set activation policy to regular (showing Dock icon).")
+            
+            // Now open the window
+            openWindow(id: "main")
+            print("MenuBar: Requested to open window with id 'main'.")
+            
+            // This makes the app (and its newly opened/focused window) active.
+            // 'ignoringOtherApps: true' is generally preferred for direct user actions
+            // like clicking a button to open something.
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            print("MenuBar: Activated application.")
         }
         
         Divider()

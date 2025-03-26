@@ -10,6 +10,7 @@ import SwiftData
 
 @main
 struct WorkTimerApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     // Create a single instance of the ViewModel for the entire app lifecycle
     @StateObject private var timerViewModel = TimerViewModel()
     
