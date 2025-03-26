@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 
 // Enum to represent the timer's state
@@ -15,45 +16,10 @@ enum TimerState: String {
     case paused = "Paused"
 }
 
-// Struct to hold recorded work sessions
-struct WorkSession: Identifiable, Hashable, Codable {
-    let id: UUID
-    let duration: TimeInterval
-    let endTime: Date
-    
-    init(duration: TimeInterval, endTime: Date) {
-        self.id = UUID() // Generate a NEW ID only when creating a session this way
-        self.duration = duration
-        self.endTime = endTime
-    }
-    
-    // Define the keys used for encoding/decoding (optional but good practice)
-    private enum CodingKeys: String, CodingKey {
-        case id, duration, endTime
-    }
-    
-    // Explicit Initializer required by Decodable
-    // This is called when creating a WorkSession FROM encoded data (e.g., JSON)
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        // Decode each property from the container using the defined keys
-        // This correctly assigns the DECODED id to the let constant.
-        self.id = try container.decode(UUID.self, forKey: .id)
-        self.duration = try container.decode(TimeInterval.self, forKey: .duration)
-        self.endTime = try container.decode(Date.self, forKey: .endTime)
-    }
-    
-    // Swift can synthesize the `encode(to:)` method automatically
-    // because all properties conform to Codable and we defined CodingKeys (or if names match).
-    // No need to write `encode(to:)` unless customization is needed.
-}
-
 // ObservableObject to manage the timer state and logic
 class TimerViewModel: ObservableObject {
     @Published var timerState: TimerState = .stopped
     @Published var elapsedTime: TimeInterval = 0.0
-    @Published var workSessions: [WorkSession] = [] // Consider using @AppStorage later for persistence
     
     private var timer: Timer? = nil
     private var startTime: Date? = nil
@@ -72,11 +38,6 @@ class TimerViewModel: ObservableObject {
         formatter.timeStyle = .medium
         return formatter
     }()
-    
-    init() {
-        // In a real app, we might load saved workSessions here
-        // For now, it starts empty
-    }
     
     func startTimer() {
         guard timerState != .running else { return }
@@ -118,7 +79,7 @@ class TimerViewModel: ObservableObject {
         self.startTime = nil
     }
     
-    func stopTimer() {
+    func stopTimer(context: ModelContext) {
         guard timerState != .stopped else { return }
         
         let finalTime: TimeInterval
@@ -132,8 +93,10 @@ class TimerViewModel: ObservableObject {
         
         if finalTime > 0.1 {
             let newSession = WorkSession(duration: finalTime, endTime: Date())
-            // Insert at the beginning to show newest first
-            workSessions.insert(newSession, at: 0) // Update published property
+            // Insert into the provided context
+            context.insert(newSession)
+            // SwiftData handles saving automatically in most SwiftUI contexts
+            // or you could explicitly call try? context.save() if needed.
         }
         
         // Reset visual timer immediately after stopping
@@ -150,10 +113,6 @@ class TimerViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.timerState = .stopped // Update published property
         }
-    }
-    
-    func deleteSession(at offsets: IndexSet) {
-        workSessions.remove(atOffsets: offsets) // Update published property
     }
     
     func formatTime(_ interval: TimeInterval) -> String {

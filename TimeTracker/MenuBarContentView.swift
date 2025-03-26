@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MenuBarContentView: View {
     // Access the shared ViewModel
     @EnvironmentObject var viewModel: TimerViewModel
     // Access the openWindow action from the environment
     @Environment(\.openWindow) var openWindow
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
         // Display Current Status
@@ -33,7 +35,7 @@ struct MenuBarContentView: View {
         .keyboardShortcut("p", modifiers: [.command, .option]) // Example shortcut
         
         Button("Stop") {
-            viewModel.stopTimer()
+            viewModel.stopTimer(context: modelContext)
         }
         .disabled(viewModel.timerState == .stopped)
         .keyboardShortcut(".", modifiers: [.command, .option]) // Example shortcut

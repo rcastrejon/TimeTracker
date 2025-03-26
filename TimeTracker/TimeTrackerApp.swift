@@ -6,12 +6,26 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct WorkTimerApp: App {
     // Create a single instance of the ViewModel for the entire app lifecycle
     @StateObject private var timerViewModel = TimerViewModel()
-    // No longer need @Environment(\.openWindow) here, it's in MenuBarContentView
+    
+    // SwiftData model container
+    var sharedModelContainer: ModelContainer = {
+        let schema = Schema([
+            WorkSession.self, // Register model class
+        ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false) // Set to true for in-memory testing
+        
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
     
     var body: some Scene {
         // Main Application Window (can be closed)
@@ -20,6 +34,7 @@ struct WorkTimerApp: App {
                 .environmentObject(timerViewModel) // Inject the ViewModel
                 .frame(minWidth: 400, minHeight: 400)
         }
+        .modelContainer(sharedModelContainer)
         // Prevent creating new windows via the File menu (keeps single main window)
         .commands {
             CommandGroup(replacing: .newItem) {}
@@ -30,7 +45,8 @@ struct WorkTimerApp: App {
             // --- Menu Content ---
             // Instantiate the dedicated view struct
             MenuBarContentView()
-                .environmentObject(timerViewModel) // Inject the ViewModel HERE
+                .environmentObject(timerViewModel) // Inject the ViewModel
+                .modelContainer(sharedModelContainer)
         } label: {
             // --- Menu Bar Icon/Label ---
             menuBarLabel() // Call the helper for the label

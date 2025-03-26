@@ -6,10 +6,15 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     // Get the shared ViewModel from the environment
     @EnvironmentObject var timerViewModel: TimerViewModel
+    @Environment(\.modelContext) private var modelContext // Inject ModelContext
+    
+    // Use @Query to fetch WorkSession data, sorted by endTime descending
+    @Query(sort: \WorkSession.endTime, order: .reverse) private var workSessions: [WorkSession]
     
     var body: some View {
         VStack(spacing: 20) {
@@ -39,7 +44,7 @@ struct ContentView: View {
                 .keyboardShortcut("p", modifiers: .command)
                 
                 Button("Stop") {
-                    timerViewModel.stopTimer() // Call ViewModel
+                    timerViewModel.stopTimer(context: modelContext)
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
@@ -54,7 +59,7 @@ struct ContentView: View {
             VStack(alignment: .leading) {
                 Text("Work History")
                     .font(.headline)
-                if timerViewModel.workSessions.isEmpty { // Read ViewModel
+                if workSessions.isEmpty { // Read ViewModel
                     Text("No sessions recorded yet.")
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -62,7 +67,7 @@ struct ContentView: View {
                 } else {
                     List {
                         // Use ViewModel's sessions and formatters
-                        ForEach(timerViewModel.workSessions) { session in
+                        ForEach(workSessions) { session in
                             HStack {
                                 Text(timerViewModel.formatTime(session.duration))
                                     .font(.system(.body, design: .monospaced))
@@ -72,7 +77,7 @@ struct ContentView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        .onDelete(perform: timerViewModel.deleteSession) // Call ViewModel
+                        .onDelete(perform: deleteSession) // Call ViewModel
                     }
                     .listStyle(.bordered(alternatesRowBackgrounds: true))
                 }
@@ -83,10 +88,22 @@ struct ContentView: View {
         .padding()
         // No need for onDisappear cleanup here anymore, ViewModel handles timer lifecycle
     }
+    
+    // Function within the View to handle deletion using the ModelContext
+    private func deleteSession(at offsets: IndexSet) {
+        withAnimation {
+            offsets.map { workSessions[$0] }.forEach(modelContext.delete)
+            // Might want error handling around save if needed,
+            // but often it's automatic.
+            // try? modelContext.save()
+        }
+    }
+    
 }
 
 #Preview {
     ContentView()
-        .environmentObject(TimerViewModel()) // Inject a sample ViewModel
+        .environmentObject(TimerViewModel())
+        .modelContainer(for: WorkSession.self, inMemory: true) // Use in-memory for preview
         .frame(width: 400, height: 400)
 }
