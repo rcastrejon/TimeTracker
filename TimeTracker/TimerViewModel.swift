@@ -53,7 +53,7 @@ class TimerViewModel: ObservableObject {
         timer?.invalidate() // Ensure no previous timer is running
         
         // Schedule timer on the main run loop in common modes
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self, let startTime = self.startTime else { return }
             // Use DispatchQueue.main.async to ensure UI updates happen on the main thread
             DispatchQueue.main.async {
@@ -91,12 +91,16 @@ class TimerViewModel: ObservableObject {
         
         stopTimerInternal() // Stop timer mechanism, clear state
         
-        if finalTime > 0.1 {
+        // Only save if duration is meaningful (e.g., more than a fraction of a second)
+        // Using 1.0 second threshold, adjust if needed
+        if finalTime >= 1.0 {
             let newSession = WorkSession(duration: finalTime, endTime: Date())
             // Insert into the provided context
             context.insert(newSession)
             // SwiftData handles saving automatically in most SwiftUI contexts
-            // or you could explicitly call try? context.save() if needed.
+            // or could explicitly call try? context.save() if needed.
+        } else {
+            print("Session too short, not saving.")
         }
         
         // Reset visual timer immediately after stopping
@@ -116,7 +120,7 @@ class TimerViewModel: ObservableObject {
     }
     
     func formatTime(_ interval: TimeInterval) -> String {
-        return timeFormatter.string(from: interval) ?? "00:00:00"
+        return timeFormatter.string(from: interval.rounded()) ?? "00:00:00"
     }
     
     deinit {
