@@ -17,9 +17,36 @@ enum TimerState: String {
 
 // Struct to hold recorded work sessions
 struct WorkSession: Identifiable, Hashable, Codable {
-    let id = UUID()
+    let id: UUID
     let duration: TimeInterval
     let endTime: Date
+    
+    init(duration: TimeInterval, endTime: Date) {
+        self.id = UUID() // Generate a NEW ID only when creating a session this way
+        self.duration = duration
+        self.endTime = endTime
+    }
+    
+    // Define the keys used for encoding/decoding (optional but good practice)
+    private enum CodingKeys: String, CodingKey {
+        case id, duration, endTime
+    }
+    
+    // Explicit Initializer required by Decodable
+    // This is called when creating a WorkSession FROM encoded data (e.g., JSON)
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Decode each property from the container using the defined keys
+        // This correctly assigns the DECODED id to the let constant.
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.duration = try container.decode(TimeInterval.self, forKey: .duration)
+        self.endTime = try container.decode(Date.self, forKey: .endTime)
+    }
+    
+    // Swift can synthesize the `encode(to:)` method automatically
+    // because all properties conform to Codable and we defined CodingKeys (or if names match).
+    // No need to write `encode(to:)` unless customization is needed.
 }
 
 // ObservableObject to manage the timer state and logic
