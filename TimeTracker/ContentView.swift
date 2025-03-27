@@ -46,7 +46,11 @@ struct ContentView: View {
                 .keyboardShortcut("p", modifiers: .command)
                 
                 Button("Stop") {
-                    timerViewModel.stopTimer(context: modelContext)
+                    if let sessionData = timerViewModel.stopTimer() {
+                        let newSession = WorkSession(duration: sessionData.duration, endTime: sessionData.endTime)
+                        modelContext.insert(newSession)
+                        // Optional: try? modelContext.save() if explicit save desired
+                    }
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
@@ -83,7 +87,7 @@ struct ContentView: View {
                                 Text(timerViewModel.formatTime(session.duration))
                                     .font(.system(.body, design: .monospaced))
                                 Spacer()
-                                Text("\(session.startTime, formatter: timerViewModel.timeOnlyFormatter) - \(session.endTime, formatter: timerViewModel.timeOnlyFormatter)")
+                                Text("\(session.startTime, formatter: Formatters.timeOnlyFormatter) - \(session.endTime, formatter: Formatters.timeOnlyFormatter)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }

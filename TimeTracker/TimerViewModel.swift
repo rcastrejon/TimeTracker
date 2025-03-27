@@ -25,27 +25,6 @@ class TimerViewModel: ObservableObject {
     private var startTime: Date? = nil
     private var accumulatedTimeBeforePause: TimeInterval = 0.0
     
-    let timeFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute, .second]
-        formatter.zeroFormattingBehavior = .pad
-        return formatter
-    }()
-    
-    let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .medium
-        return formatter
-    }()
-    
-    let timeOnlyFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .medium 
-        return formatter
-    }()
-    
     func startTimer() {
         guard timerState != .running else { return }
         
@@ -86,34 +65,30 @@ class TimerViewModel: ObservableObject {
         self.startTime = nil
     }
     
-    func stopTimer(context: ModelContext) {
-        guard timerState != .stopped else { return }
+    func stopTimer() -> (duration: TimeInterval, endTime: Date)? {
+        guard timerState != .stopped else { return nil }
         
-        let finalTime: TimeInterval
+        let finalEndTime = Date()
+        let finalDuration: TimeInterval
         if timerState == .running, let startTime = startTime {
-            finalTime = accumulatedTimeBeforePause + Date().timeIntervalSince(startTime)
+            finalDuration = accumulatedTimeBeforePause + finalEndTime.timeIntervalSince(startTime)
         } else { // Paused state
-            finalTime = accumulatedTimeBeforePause
+            finalDuration = accumulatedTimeBeforePause
         }
         
         stopTimerInternal() // Stop timer mechanism, clear state
         
-        // Only save if duration is meaningful (e.g., more than a fraction of a second)
-        // Using 1.0 second threshold, adjust if needed
-        if finalTime >= 1.0 {
-            let newSession = WorkSession(duration: finalTime, endTime: Date())
-            // Insert into the provided context
-            context.insert(newSession)
-            // SwiftData handles saving automatically in most SwiftUI contexts
-            // or could explicitly call try? context.save() if needed.
-        } else {
-            print("Session too short, not saving.")
-        }
-        
-        // Reset visual timer immediately after stopping
+        // Reset visual timer immediately
         elapsedTime = 0.0
         accumulatedTimeBeforePause = 0.0
-        // state is already set to stopped in stopTimerInternal
+        
+        // Only return data if duration is meaningful
+        if finalDuration >= 1.0 {
+            return (duration: finalDuration, endTime: finalEndTime)
+        } else {
+            print("Session too short, not saving.")
+            return nil
+        }
     }
     
     func discardTimer() {
@@ -143,7 +118,7 @@ class TimerViewModel: ObservableObject {
     }
     
     func formatTime(_ interval: TimeInterval) -> String {
-        return timeFormatter.string(from: interval.rounded()) ?? "00:00:00"
+        return Formatters.durationFormatter.string(from: interval.rounded()) ?? "00:00:00"
     }
     
     deinit {

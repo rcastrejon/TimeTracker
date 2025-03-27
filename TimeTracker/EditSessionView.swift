@@ -17,14 +17,6 @@ struct EditSessionView: View {
     
     @State private var isInvalid: Bool = false
     
-    // Reuse the formatter for consistency (consider making formatters globally accessible or passing them)
-    let timeFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute, .second]
-        formatter.zeroFormattingBehavior = .pad
-        return formatter
-    }()
-    
     init(session: WorkSession) {
         self.session = session
         // Initialize the @State variables with the session's current values
@@ -102,7 +94,7 @@ struct EditSessionView: View {
         if duration < 0 {
             return "Invalid"
         }
-        return timeFormatter.string(from: duration.rounded()) ?? "Error"
+        return Formatters.durationFormatter.string(from: duration.rounded()) ?? "Error"
     }
 }
 

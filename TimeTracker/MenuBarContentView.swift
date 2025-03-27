@@ -35,7 +35,11 @@ struct MenuBarContentView: View {
         .keyboardShortcut("p", modifiers: [.command, .option])
         
         Button("Stop") {
-            viewModel.stopTimer(context: modelContext)
+            if let sessionData = viewModel.stopTimer() {
+                let newSession = WorkSession(duration: sessionData.duration, endTime: sessionData.endTime)
+                modelContext.insert(newSession)
+                // Optional: try? modelContext.save()
+            }
         }
         .disabled(viewModel.timerState == .stopped)
         .keyboardShortcut(".", modifiers: [.command, .option])
