@@ -81,7 +81,7 @@ struct ContentView: View {
                                 Text(timerViewModel.formatTime(session.duration))
                                     .font(.system(.body, design: .monospaced))
                                 Spacer()
-                                Text("Stopped: \(session.endTime, formatter: timerViewModel.dateFormatter)")
+                                Text("\(session.startTime, formatter: timerViewModel.timeOnlyFormatter) - \(session.endTime, formatter: timerViewModel.timeOnlyFormatter)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }

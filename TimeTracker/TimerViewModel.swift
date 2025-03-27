@@ -39,6 +39,13 @@ class TimerViewModel: ObservableObject {
         return formatter
     }()
     
+    let timeOnlyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .medium 
+        return formatter
+    }()
+    
     func startTimer() {
         guard timerState != .running else { return }
         
