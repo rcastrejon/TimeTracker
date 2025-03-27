@@ -1,5 +1,5 @@
 //
-//  Formatter.swift
+//  Formatters.swift
 //  TimeTracker
 //
 //  Created by Rodrigo Castrejón on 27/03/25.

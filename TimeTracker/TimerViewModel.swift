@@ -20,6 +20,7 @@ enum TimerState: String {
 class TimerViewModel: ObservableObject {
     @Published var timerState: TimerState = .stopped
     @Published var elapsedTime: TimeInterval = 0.0
+    @Published var selectedProject: Project? = nil
     
     private var timer: Timer? = nil
     private var startTime: Date? = nil

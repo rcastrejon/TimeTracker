@@ -17,7 +17,8 @@ struct WorkTimerApp: App {
     // SwiftData model container
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            WorkSession.self, // Register model class
+            WorkSession.self, 
+            Project.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false) // Set to true for in-memory testing
         

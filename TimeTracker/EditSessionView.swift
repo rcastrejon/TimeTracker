@@ -10,18 +10,23 @@ import SwiftData
 
 struct EditSessionView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) private var modelContext
+    
     let session: WorkSession
     
     @State private var editStartTime: Date
     @State private var editEndTime: Date
-    
+    @State private var editProject: Project?
     @State private var isInvalid: Bool = false
+    
+    @Query(sort: \Project.name) private var projects: [Project]
     
     init(session: WorkSession) {
         self.session = session
         // Initialize the @State variables with the session's current values
         _editStartTime = State(initialValue: session.startTime)
         _editEndTime = State(initialValue: session.endTime)
+        _editProject = State(initialValue: session.project)
     }
     
     var body: some View {
@@ -31,6 +36,18 @@ struct EditSessionView: View {
             
             LabeledPreciseDatePicker(label: "Start Time:", selection: $editStartTime)
             LabeledPreciseDatePicker(label: "End Time:", selection: $editEndTime)
+            
+            HStack {
+                Text("Project:")
+                Picker("Select Project", selection: $editProject) {
+                    Text("None").tag(Project?.none)
+                    ForEach(projects) { project in
+                        Text(project.name).tag(Optional(project))
+                    }
+                }
+                // Maybe add a button to create projects directly from here
+                // Button { ... } label: { Image(systemName: "plus.circle.fill") }
+            }
             
             Divider()
             
@@ -54,7 +71,6 @@ struct EditSessionView: View {
             
             HStack {
                 Button("Cancel", role: .cancel) {
-                    // Simply dismiss without applying changes
                     dismiss()
                 }
                 Spacer()
@@ -62,11 +78,11 @@ struct EditSessionView: View {
                     // Apply the temporary edits back to the original session object
                     session.startTime = editStartTime
                     session.endTime = editEndTime
+                    session.project = editProject
                     // SwiftData automatically tracks changes to 'session' now.
                     // No explicit save needed here unless you want finer control/error handling.
                     // try? modelContext.save() // Optional: If explicit saving is desired
                     
-                    // Dismiss the sheet after saving
                     dismiss()
                 }
                 .disabled(isInvalid)
@@ -99,13 +115,25 @@ struct EditSessionView: View {
 }
 
 #Preview {
-    // Create dummy data for preview
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: WorkSession.self, configurations: config)
-    let sampleSession = WorkSession(startTime: Date().addingTimeInterval(-3600), endTime: Date())
-    container.mainContext.insert(sampleSession)
-    
-    return EditSessionView(session: sampleSession)
-        .padding()
-        .frame(width: 400, height: 300)
+    do {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: WorkSession.self, Project.self, configurations: config)
+        
+        // Sample projects
+        let project1 = Project(name: "Website Redesign")
+        let project2 = Project(name: "API Development")
+        container.mainContext.insert(project1)
+        container.mainContext.insert(project2)
+        
+        // Sample session linked to project1
+        let sampleSession = WorkSession(startTime: Date().addingTimeInterval(-3600), endTime: Date(), project: project1)
+        container.mainContext.insert(sampleSession)
+        
+        return EditSessionView(session: sampleSession)
+            .modelContainer(container)
+            .padding()
+            .frame(width: 400, height: 350)
+    } catch {
+        fatalError("Failed to create model container for preview: \(error)")
+    }
 }

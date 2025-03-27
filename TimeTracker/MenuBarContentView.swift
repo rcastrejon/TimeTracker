@@ -9,15 +9,16 @@ import SwiftUI
 import SwiftData
 
 struct MenuBarContentView: View {
-    // Access the shared ViewModel
     @EnvironmentObject var viewModel: TimerViewModel
-    // Access the openWindow action from the environment
     @Environment(\.openWindow) var openWindow
     @Environment(\.modelContext) private var modelContext
     
+    @Query(sort: \Project.name) private var projects: [Project]
+    
     var body: some View {
-        // Display Current Status
+        // Display Current Status & Project
         Text("Status: \(viewModel.timerState.rawValue)")
+        Text("Project: \(viewModel.selectedProject?.name ?? "None")")
         
         Divider()
         
