@@ -26,7 +26,7 @@ struct ContentView: View {
             // Control Buttons - Call ViewModel methods
             HStack(spacing: 15) {
                 Button {
-                    timerViewModel.startTimer() // Call ViewModel
+                    timerViewModel.startTimer()
                 } label: {
                     Text(timerViewModel.timerState == .paused ? "Resume" : "Start")
                         .frame(minWidth: 80)
@@ -50,6 +50,15 @@ struct ContentView: View {
                 .tint(.red)
                 .disabled(timerViewModel.timerState == .stopped) // Read ViewModel state
                 .keyboardShortcut(".", modifiers: .command)
+                
+                Button("Discard") {
+                    timerViewModel.discardTimer()
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                // Enable if timer is running OR paused (i.e., not stopped)
+                .disabled(timerViewModel.timerState == .stopped)
+                .keyboardShortcut(.delete)
             }
             .controlSize(.large)
             

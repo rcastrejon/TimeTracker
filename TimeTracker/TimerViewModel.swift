@@ -109,6 +109,22 @@ class TimerViewModel: ObservableObject {
         // state is already set to stopped in stopTimerInternal
     }
     
+    func discardTimer() {
+        // Only discard if the timer isn't already stopped
+        guard timerState != .stopped else { return }
+        
+        // Reset visual timer and accumulated time immediately
+        // Ensure UI updates happen on the main thread
+        DispatchQueue.main.async {
+            self.elapsedTime = 0.0
+        }
+        self.accumulatedTimeBeforePause = 0.0
+        
+        // Use the internal helper to stop the timer mechanism and set the state to stopped
+        // This avoids saving the session, which stopTimer(context:) does.
+        stopTimerInternal()
+    }
+    
     private func stopTimerInternal() {
         timer?.invalidate()
         timer = nil

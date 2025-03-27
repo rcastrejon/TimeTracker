@@ -26,19 +26,26 @@ struct MenuBarContentView: View {
             viewModel.startTimer()
         }
         .disabled(viewModel.timerState == .running)
-        .keyboardShortcut("s", modifiers: [.command, .option]) // Example shortcut
+        .keyboardShortcut("s", modifiers: [.command, .option])
         
         Button("Pause") {
             viewModel.pauseTimer()
         }
         .disabled(viewModel.timerState != .running)
-        .keyboardShortcut("p", modifiers: [.command, .option]) // Example shortcut
+        .keyboardShortcut("p", modifiers: [.command, .option])
         
         Button("Stop") {
             viewModel.stopTimer(context: modelContext)
         }
         .disabled(viewModel.timerState == .stopped)
-        .keyboardShortcut(".", modifiers: [.command, .option]) // Example shortcut
+        .keyboardShortcut(".", modifiers: [.command, .option])
+        
+        Button("Discard") {
+            viewModel.discardTimer()
+        }
+        // Enable if timer is running OR paused (i.e., not stopped)
+        .disabled(viewModel.timerState == .stopped)
+        .keyboardShortcut(.delete, modifiers: .option)
         
         Divider()
         
