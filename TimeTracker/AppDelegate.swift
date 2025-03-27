@@ -19,7 +19,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // --- Check current policy before setting ---
         // Only change to .accessory if we are currently .regular (or something else)
         if sender.activationPolicy() != .accessory {
-            print("AppDelegate: Current policy is not .accessory. Setting it now.")
             sender.setActivationPolicy(.accessory)
             print("AppDelegate: Set activation policy to accessory (hiding Dock icon).")
         } else {

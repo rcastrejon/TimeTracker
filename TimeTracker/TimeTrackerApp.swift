@@ -63,9 +63,9 @@ struct WorkTimerApp: App {
         case .stopped:
             Image(systemName: "timer")
         case .running:
-            Image(systemName: "pause.circle.fill")
-        case .paused:
             Image(systemName: "play.circle.fill")
+        case .paused:
+            Image(systemName: "pause.circle.fill")
         }
     }
 }

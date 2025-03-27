@@ -28,7 +28,7 @@ struct ContentView: View {
                 Button {
                     timerViewModel.startTimer()
                 } label: {
-                    Text(timerViewModel.timerState == .paused ? "Resume" : "Start")
+                    Text(timerViewModel.timerState == .stopped ? "Start" : "Resume")
                         .frame(minWidth: 80)
                 }
                 .buttonStyle(.borderedProminent)

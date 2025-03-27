@@ -22,7 +22,7 @@ struct MenuBarContentView: View {
         Divider()
         
         // Control Buttons
-        Button(viewModel.timerState == .paused ? "Resume" : "Start") {
+        Button(viewModel.timerState == .stopped ? "Start" : "Resume") {
             viewModel.startTimer()
         }
         .disabled(viewModel.timerState == .running)
@@ -55,17 +55,15 @@ struct MenuBarContentView: View {
             // Set activation policy to regular BEFORE opening the window
             // to ensure the Dock icon appears.
             NSApplication.shared.setActivationPolicy(.regular)
-            print("MenuBar: Set activation policy to regular (showing Dock icon).")
             
             // Now open the window
             openWindow(id: "main")
-            print("MenuBar: Requested to open window with id 'main'.")
             
             // This makes the app (and its newly opened/focused window) active.
             // 'ignoringOtherApps: true' is generally preferred for direct user actions
             // like clicking a button to open something.
             NSApplication.shared.activate(ignoringOtherApps: true)
-            print("MenuBar: Activated application.")
+            print("MenuBar: Set activation policy to regular (showing Dock icon).")
         }
         
         Divider()
