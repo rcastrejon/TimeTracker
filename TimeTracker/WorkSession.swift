@@ -9,21 +9,34 @@ import Foundation
 import SwiftData
 
 @Model
-final class WorkSession { // Use 'final class' for SwiftData models
+final class WorkSession {
     var id: UUID
-    var duration: TimeInterval
+    var startTime: Date
     var endTime: Date
-    
-    // Computed property to calculate the start time
-    var startTime: Date {
-        // Subtract the duration from the end time
-        return endTime.addingTimeInterval(-duration)
+
+    var duration: TimeInterval {
+        max(0, endTime.timeIntervalSince(startTime))
     }
-    
-    // Initializer for creating new sessions in code
-    init(duration: TimeInterval, endTime: Date) {
-        self.id = UUID() // Generate ID when creating programmatically
-        self.duration = duration
+
+    init(startTime: Date, endTime: Date) {
+        // Ensure startTime is before endTime during initialization if possible,
+        // although validation during editing is more critical.
+        guard startTime <= endTime else {
+            print("Warning: Attempted to create WorkSession with startTime after endTime. Adjusting.")
+            self.id = UUID()
+            self.startTime = endTime
+            self.endTime = endTime
+            return
+        }
+        self.id = UUID()
+        self.startTime = startTime
         self.endTime = endTime
+    }
+
+    // Convenience init matching the old structure (calculates startTime from duration)
+    // Useful for existing code like stopTimer that provides duration and endTime.
+    convenience init(duration: TimeInterval, endTime: Date) {
+        let calculatedStartTime = endTime.addingTimeInterval(-max(0, duration))
+        self.init(startTime: calculatedStartTime, endTime: endTime)
     }
 }

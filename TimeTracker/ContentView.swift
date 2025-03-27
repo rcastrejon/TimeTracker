@@ -16,6 +16,8 @@ struct ContentView: View {
     // Use @Query to fetch WorkSession data, sorted by endTime descending
     @Query(sort: \WorkSession.endTime, order: .reverse) private var workSessions: [WorkSession]
     
+    @State private var sessionToEdit: WorkSession? = nil
+    
     var body: some View {
         VStack(spacing: 20) {
             // Timer Display - Reads from ViewModel
@@ -85,6 +87,15 @@ struct ContentView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
+                            .contextMenu {
+                                Button("Edit Session") {
+                                    sessionToEdit = session // Set the state to trigger the sheet
+                                }
+                                
+                                Button("Delete Session", role: .destructive) {
+                                    deleteSession(session) // Call delete helper
+                                }
+                            }
                         }
                         .onDelete(perform: deleteSession) // Call ViewModel
                     }
@@ -95,6 +106,11 @@ struct ContentView: View {
             Spacer()
         }
         .padding()
+        .sheet(item: $sessionToEdit) { session in
+            // Pass the selected session to the editing view
+            // The environment objects/values (like modelContext) are inherited automatically
+            EditSessionView(session: session)
+        }
         // No need for onDisappear cleanup here anymore, ViewModel handles timer lifecycle
     }
     
@@ -108,6 +124,12 @@ struct ContentView: View {
         }
     }
     
+    private func deleteSession(_ session: WorkSession) {
+        withAnimation {
+            modelContext.delete(session)
+            // try? modelContext.save()
+        }
+    }
 }
 
 #Preview {
