@@ -22,29 +22,23 @@ struct ContentView: View {
     @State private var didRestoreProject = false
     
     private var groupedSessions: [(key: Project?, value: [WorkSession])] {
-        // Create a dictionary grouping sessions by project
         let dictionary = Dictionary(grouping: workSessions) { $0.project }
         
-        // Separate "No Project" sessions and other project sessions
-        let noProjectSessions = dictionary[nil] ?? [] // Get existing "No Project" sessions, default to empty array
+        let noProjectSessions = dictionary[nil] ?? []
         let projectGroups = dictionary.filter { $0.key != nil }
         
-        // Sort project groups based on the @Query project sort order
-        let sortedProjectGroups = projectGroups.sorted { proj1, proj2 in
-            guard let p1 = proj1.key, let p2 = proj2.key else { return false }
-            let idx1 = projects.firstIndex(where: { $0.id == p1.id }) ?? -1
-            let idx2 = projects.firstIndex(where: { $0.id == p2.id }) ?? -1
+        // Sort project groups using the pre-fetched project order
+        let sortedProjectGroups = projectGroups.sorted { group1, group2 in
+            guard let p1 = group1.key, let p2 = group2.key else { return false } // Should not happen due to filter
+            // Find the index based on the @Query sort order captured in 'projects'
+            let idx1 = projects.firstIndex(where: { $0.id == p1.id }) ?? Int.max
+            let idx2 = projects.firstIndex(where: { $0.id == p2.id }) ?? Int.max
             return idx1 < idx2
         }
         
-        // Start the result with the sorted project groups
+        // Combine sorted projects and the "No Project" group (always shown last)
         var result = sortedProjectGroups
-        
-        // --- Always add the "No Project" group ---
-        // Append it regardless of whether it had sessions initially.
-        // If it had sessions, `noProjectSessions` will contain them.
-        // If it didn't, `noProjectSessions` will be empty.
-        result.append((key: nil, value: noProjectSessions))
+        result.append((key: nil, value: noProjectSessions)) // Append "No Project" group
         
         return result
     }
@@ -240,11 +234,12 @@ struct ProjectDisclosureGroup: View {
     @Environment(\.modelContext) private var modelContext
     let project: Project?
     let sessions: [WorkSession]
-    @ObservedObject var timerViewModel: TimerViewModel // Use ObservedObject if passed
+    @ObservedObject var timerViewModel: TimerViewModel
     @Binding var sessionToEdit: WorkSession?
     let deleteAction: (WorkSession) -> Void
     
     @State private var isExpanded: Bool = true
+    @State private var isDropTargeted: Bool = false
     
     private var totalDuration: TimeInterval {
         // Use Project's calculation if available, otherwise sum manually for "No Project"
@@ -309,9 +304,10 @@ struct ProjectDisclosureGroup: View {
                 moveSession(item.id, to: project)
                 return true // Indicate success
             } isTargeted: { isTargeted in
-                // Optional: Visual feedback when dragging
-                // label.background(isTargeted ? Color.blue.opacity(0.1) : Color.clear)
+                self.isDropTargeted = isTargeted
             }
+            .background(isDropTargeted ? Color.blue.opacity(0.1) : Color.clear)
+            .animation(.easeInOut(duration: 0.1), value: isDropTargeted)
             
         }
         .padding(.horizontal)
@@ -333,13 +329,7 @@ struct ProjectDisclosureGroup: View {
         
         print("Moving session \(sessionToMove.id) to project: \(targetProject?.name ?? "None")")
         
-        // Update the session's project relationship
-        // This needs to happen on the main thread if UI updates immediately follow
-        DispatchQueue.main.async {
-            sessionToMove.project = targetProject
-            // SwiftData automatically saves the relationship change
-            // try? modelContext.save() // Optional explicit save
-        }
+        sessionToMove.project = targetProject
     }
 }
 
