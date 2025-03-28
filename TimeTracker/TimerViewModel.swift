@@ -20,11 +20,93 @@ enum TimerState: String {
 class TimerViewModel: ObservableObject {
     @Published var timerState: TimerState = .stopped
     @Published var elapsedTime: TimeInterval = 0.0
-    @Published var selectedProject: Project? = nil
+    @Published var selectedProject: Project? = nil {
+        // Use didSet to automatically save when the property changes
+        didSet {
+            saveLastSelectedProjectID()
+        }
+    }
     
     private var timer: Timer? = nil
     private var startTime: Date? = nil
     private var accumulatedTimeBeforePause: TimeInterval = 0.0
+    
+    private var lastSelectedProjectID: UUID? = nil
+    private var cancellables = Set<AnyCancellable>() // To hold the Combine subscriber
+    
+    init() {
+        loadLastSelectedProjectID()
+    }
+    
+    private func loadLastSelectedProjectID() {
+        if let uuidString = UserDefaults.standard.string(forKey: UserDefaults.Keys.lastSelectedProjectID) {
+            self.lastSelectedProjectID = UUID(uuidString: uuidString)
+            print("Loaded last project ID: \(uuidString)")
+        } else {
+            self.lastSelectedProjectID = nil
+            print("No last project ID found in UserDefaults.")
+        }
+    }
+    
+    private func saveLastSelectedProjectID() {
+        if let projectID = selectedProject?.id {
+            UserDefaults.standard.set(projectID.uuidString, forKey: UserDefaults.Keys.lastSelectedProjectID)
+            print("Saved last project ID: \(projectID.uuidString)")
+        } else {
+            // If 'None' is selected, remove the key
+            UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
+            print("Removed last project ID from UserDefaults (None selected).")
+        }
+    }
+    
+    /// Attempts to restore the selected project using the ID loaded from UserDefaults.
+    /// Call this method once the ModelContext is available (e.g., in a View's onAppear).
+    func restoreSelectedProject(context: ModelContext) {
+        guard let projectID = self.lastSelectedProjectID else {
+            print("No project ID to restore.")
+            return
+        }
+        
+        // Prevent re-fetching if already set (might happen if onAppear fires multiple times)
+        guard selectedProject?.id != projectID else {
+            print("Project \(projectID) already selected.")
+            return
+        }
+        
+        print("Attempting to restore project with ID: \(projectID)")
+        // Fetch the project corresponding to the stored ID
+        let fetchDescriptor = FetchDescriptor<Project>(
+            predicate: #Predicate { $0.id == projectID }
+        )
+        
+        do {
+            let projects = try context.fetch(fetchDescriptor)
+            if let projectToRestore = projects.first {
+                // Use DispatchQueue.main.async to ensure UI updates are on the main thread
+                DispatchQueue.main.async {
+                    self.selectedProject = projectToRestore
+                    print("Successfully restored project: \(projectToRestore.name)")
+                }
+                
+            } else {
+                print("Project with ID \(projectID) not found in database. Clearing saved ID.")
+                // The saved project no longer exists, clear the UserDefaults entry
+                UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
+                self.lastSelectedProjectID = nil // Clear the temporary ID as well
+                DispatchQueue.main.async {
+                    self.selectedProject = nil // Ensure UI reflects 'None' if project not found
+                }
+            }
+        } catch {
+            print("Error fetching project to restore: \(error)")
+            // Optionally clear the saved ID on error as well
+            UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
+            self.lastSelectedProjectID = nil
+            DispatchQueue.main.async {
+                self.selectedProject = nil
+            }
+        }
+    }
     
     func startTimer() {
         guard timerState != .running else { return }

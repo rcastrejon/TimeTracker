@@ -18,6 +18,8 @@ struct ContentView: View {
     @State private var sessionToEdit: WorkSession? = nil
     @State private var showingAddProjectSheet = false
     
+    @State private var didRestoreProject = false
+    
     var body: some View {
         VStack(spacing: 20) {
             // Timer Display - Reads from ViewModel
@@ -147,7 +149,12 @@ struct ContentView: View {
             // Pass the model context if needed inside AddProjectView
             // .environment(\.modelContext, modelContext)
         }
-        // No need for onDisappear cleanup here anymore, ViewModel handles timer lifecycle
+        .onAppear {
+            
+            guard !didRestoreProject else { return }
+            timerViewModel.restoreSelectedProject(context: modelContext)
+            didRestoreProject = true
+        }
     }
     
     // Function within the View to handle deletion using the ModelContext
