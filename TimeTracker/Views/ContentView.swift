@@ -124,7 +124,7 @@ struct ContentView: View {
             VStack(alignment: .leading) {
                 Text("Work History")
                     .font(.headline)
-                    .padding(.horizontal) // Add padding to align with list content
+                    .padding(.horizontal)
                 
                 if workSessions.isEmpty {
                     Text("No sessions recorded yet.")
@@ -137,14 +137,14 @@ struct ContentView: View {
                             ProjectDisclosureGroup(
                                 project: project,
                                 sessions: sessionsInGroup,
-                                timerViewModel: timerViewModel, // Pass needed objects/values
+                                timerViewModel: timerViewModel,
                                 sessionToEdit: $sessionToEdit,
-                                deleteAction: deleteSession // Pass delete function
+                                deleteAction: deleteSession
                             )
-                            .environment(\.modelContext, modelContext) // Ensure context is available
+                            .environment(\.modelContext, modelContext)
                         }
                     }
-                    .listStyle(.inset(alternatesRowBackgrounds: true)) // Use inset style for modern look
+                    .listStyle(.inset(alternatesRowBackgrounds: true))
                     // Add frame constraints if needed, List handles scrolling
                     // .frame(maxHeight: .infinity)
                 }
