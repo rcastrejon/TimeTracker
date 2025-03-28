@@ -120,17 +120,13 @@ struct ContentView: View {
                     .font(.headline)
                     .padding(.horizontal)
                 
-                if workSessions.isEmpty {
-                    Text("No sessions recorded yet.")
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center) // Center vertically too
-                } else {
-                    // Use a List for proper macOS styling and scrolling behavior
+                if !workSessions.isEmpty {
                     List {
-                        ForEach(groupedSessions, id: \.key) { project, sessionsInGroup in
+                        // Use ForEach directly with groupedSessions
+                        ForEach(groupedSessions, id: \.key?.id) { group in
                             ProjectDisclosureGroup(
-                                project: project,
-                                sessions: sessionsInGroup,
+                                project: group.key,
+                                sessions: group.value, // Pass the value directly
                                 timerViewModel: timerViewModel,
                                 sessionToEdit: $sessionToEdit,
                                 deleteAction: deleteSession
@@ -139,24 +135,25 @@ struct ContentView: View {
                         }
                     }
                     .listStyle(.inset(alternatesRowBackgrounds: true))
-                    // Add frame constraints if needed, List handles scrolling
-                    // .frame(maxHeight: .infinity)
+                    
+                } else {
+                    // Displayed when workSessions is empty
+                    Text("No sessions recorded yet.")
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
             }
         }
         .padding()
         .sheet(item: $sessionToEdit) { session in
-            // Pass the selected session to the editing view
-            // The environment objects/values (like modelContext) are inherited automatically
             EditSessionView(session: session)
+                .environment(\.modelContext, modelContext)
         }
         .sheet(isPresented: $showingAddProjectSheet) {
             AddProjectView()
-            // Pass the model context if needed inside AddProjectView
-            // .environment(\.modelContext, modelContext)
+                .environment(\.modelContext, modelContext)
         }
         .onAppear {
-            
             guard !didRestoreProject else { return }
             timerViewModel.restoreSelectedProject(context: modelContext)
             didRestoreProject = true

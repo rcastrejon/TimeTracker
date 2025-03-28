@@ -17,6 +17,7 @@ enum TimerState: String {
 }
 
 // ObservableObject to manage the timer state and logic
+@MainActor
 class TimerViewModel: ObservableObject {
     @Published var timerState: TimerState = .stopped
     @Published var elapsedTime: TimeInterval = 0.0
@@ -32,7 +33,6 @@ class TimerViewModel: ObservableObject {
     private var accumulatedTimeBeforePause: TimeInterval = 0.0
     
     private var lastSelectedProjectID: UUID? = nil
-    private var cancellables = Set<AnyCancellable>() // To hold the Combine subscriber
     
     init() {
         loadLastSelectedProjectID()
@@ -82,29 +82,22 @@ class TimerViewModel: ObservableObject {
         do {
             let projects = try context.fetch(fetchDescriptor)
             if let projectToRestore = projects.first {
-                // Use DispatchQueue.main.async to ensure UI updates are on the main thread
-                DispatchQueue.main.async {
-                    self.selectedProject = projectToRestore
-                    print("Successfully restored project: \(projectToRestore.name)")
-                }
-                
+                // No DispatchQueue needed due to @MainActor
+                self.selectedProject = projectToRestore
+                print("Successfully restored project: \(projectToRestore.name)")
             } else {
                 print("Project with ID \(projectID) not found in database. Clearing saved ID.")
-                // The saved project no longer exists, clear the UserDefaults entry
                 UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
-                self.lastSelectedProjectID = nil // Clear the temporary ID as well
-                DispatchQueue.main.async {
-                    self.selectedProject = nil // Ensure UI reflects 'None' if project not found
-                }
+                self.lastSelectedProjectID = nil
+                // No DispatchQueue needed due to @MainActor
+                self.selectedProject = nil
             }
         } catch {
             print("Error fetching project to restore: \(error)")
-            // Optionally clear the saved ID on error as well
             UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
             self.lastSelectedProjectID = nil
-            DispatchQueue.main.async {
-                self.selectedProject = nil
-            }
+            // No DispatchQueue needed due to @MainActor
+            self.selectedProject = nil
         }
     }
     
@@ -121,11 +114,10 @@ class TimerViewModel: ObservableObject {
         
         timer?.invalidate() // Ensure no previous timer is running
         
-        // Schedule timer on the main run loop in common modes
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self, let startTime = self.startTime else { return }
-            // Use DispatchQueue.main.async to ensure UI updates happen on the main thread
-            DispatchQueue.main.async {
+            // Use Task to ensure this block runs on the main actor if called from timer's thread
+            Task { @MainActor [weak self] in
+                guard let self = self, let startTime = self.startTime else { return }
                 self.elapsedTime = self.accumulatedTimeBeforePause + Date().timeIntervalSince(startTime)
             }
         }
@@ -141,10 +133,8 @@ class TimerViewModel: ObservableObject {
         timer = nil
         
         accumulatedTimeBeforePause += Date().timeIntervalSince(startTime)
-        // Update elapsedTime precisely on pause
-        elapsedTime = accumulatedTimeBeforePause
-        
-        timerState = .paused // Update published property
+        elapsedTime = accumulatedTimeBeforePause // Update published property (already on main actor)
+        timerState = .paused // Update published property (already on main actor)
         self.startTime = nil
     }
     
@@ -178,11 +168,7 @@ class TimerViewModel: ObservableObject {
         // Only discard if the timer isn't already stopped
         guard timerState != .stopped else { return }
         
-        // Reset visual timer and accumulated time immediately
-        // Ensure UI updates happen on the main thread
-        DispatchQueue.main.async {
-            self.elapsedTime = 0.0
-        }
+        self.elapsedTime = 0.0
         self.accumulatedTimeBeforePause = 0.0
         
         // Use the internal helper to stop the timer mechanism and set the state to stopped
@@ -194,10 +180,7 @@ class TimerViewModel: ObservableObject {
         timer?.invalidate()
         timer = nil
         startTime = nil
-        // Ensure state is updated on the main thread if called from background later
-        DispatchQueue.main.async {
-            self.timerState = .stopped // Update published property
-        }
+        self.timerState = .stopped
     }
     
     func formatTime(_ interval: TimeInterval) -> String {
