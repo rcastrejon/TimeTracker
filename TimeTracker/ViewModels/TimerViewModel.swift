@@ -28,10 +28,10 @@ class TimerViewModel: ObservableObject {
         }
     }
     
-    private var timer: Timer? = nil
+    private var timerTask: Task<Void, Error>? = nil
+    
     private var startTime: Date? = nil
     private var accumulatedTimeBeforePause: TimeInterval = 0.0
-    
     private var lastSelectedProjectID: UUID? = nil
     
     init() {
@@ -104,37 +104,44 @@ class TimerViewModel: ObservableObject {
     func startTimer() {
         guard timerState != .running else { return }
         
+        timerTask?.cancel()
+        
         if timerState == .stopped {
             elapsedTime = 0.0
             accumulatedTimeBeforePause = 0.0
         }
         
         startTime = Date()
-        timerState = .running // Update published property
+        timerState = .running
         
-        timer?.invalidate() // Ensure no previous timer is running
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            // Use Task to ensure this block runs on the main actor if called from timer's thread
-            Task { @MainActor [weak self] in
-                guard let self = self, let startTime = self.startTime else { return }
-                self.elapsedTime = self.accumulatedTimeBeforePause + Date().timeIntervalSince(startTime)
+        // Start a new Task for the timer loop
+        timerTask = Task {
+            while !Task.isCancelled {
+                // Calculate elapsed time directly within the loop
+                if let currentStartTime = self.startTime {
+                    self.elapsedTime = self.accumulatedTimeBeforePause + Date().timeIntervalSince(currentStartTime)
+                }
+                
+                // Sleep for 1 second (nanoseconds)
+                // Task.sleep throws CancellationError if cancelled during sleep
+                try await Task.sleep(for: .seconds(1))
             }
-        }
-        if let timer = timer {
-            RunLoop.current.add(timer, forMode: .common)
+            // If loop exits due to cancellation, do cleanup if needed (handled by stop/discard)
+            print("Timer task loop finished or cancelled.")
         }
     }
     
     func pauseTimer() {
-        guard timerState == .running, let startTime = startTime else { return }
+        guard timerState == .running, let currentStartTime = startTime else { return }
         
-        timer?.invalidate()
-        timer = nil
+        timerTask?.cancel()
+        timerTask = nil
         
-        accumulatedTimeBeforePause += Date().timeIntervalSince(startTime)
-        elapsedTime = accumulatedTimeBeforePause // Update published property (already on main actor)
-        timerState = .paused // Update published property (already on main actor)
+        // Calculate accumulated time precisely at the moment of pause
+        accumulatedTimeBeforePause += Date().timeIntervalSince(currentStartTime)
+        elapsedTime = accumulatedTimeBeforePause // Update display
+        
+        timerState = .paused
         self.startTime = nil
     }
     
@@ -143,19 +150,22 @@ class TimerViewModel: ObservableObject {
         
         let finalEndTime = Date()
         let finalDuration: TimeInterval
-        if timerState == .running, let startTime = startTime {
-            finalDuration = accumulatedTimeBeforePause + finalEndTime.timeIntervalSince(startTime)
+        
+        if timerState == .running, let currentStartTime = startTime {
+            // Calculate final duration if it was running
+            finalDuration = accumulatedTimeBeforePause + finalEndTime.timeIntervalSince(currentStartTime)
+            // Cancel the task as part of stopping
+            timerTask?.cancel()
         } else { // Paused state
             finalDuration = accumulatedTimeBeforePause
+            // Task is already cancelled/nil in paused state
         }
         
-        stopTimerInternal() // Stop timer mechanism, clear state
+        stopTimerInternal() // Reset internal state
         
-        // Reset visual timer immediately
         elapsedTime = 0.0
         accumulatedTimeBeforePause = 0.0
         
-        // Only return data if duration is meaningful
         if finalDuration >= 1.0 {
             return (duration: finalDuration, endTime: finalEndTime)
         } else {
@@ -165,30 +175,25 @@ class TimerViewModel: ObservableObject {
     }
     
     func discardTimer() {
-        // Only discard if the timer isn't already stopped
         guard timerState != .stopped else { return }
+        
+        timerTask?.cancel()
         
         self.elapsedTime = 0.0
         self.accumulatedTimeBeforePause = 0.0
         
-        // Use the internal helper to stop the timer mechanism and set the state to stopped
-        // This avoids saving the session, which stopTimer(context:) does.
-        stopTimerInternal()
+        stopTimerInternal() // Reset internal state
     }
     
     private func stopTimerInternal() {
-        timer?.invalidate()
-        timer = nil
+        // Cancel the task explicitly, though pause/stop should already do it
+        timerTask?.cancel()
+        timerTask = nil
         startTime = nil
-        self.timerState = .stopped
+        self.timerState = .stopped // Update state (already on main actor)
     }
     
     func formatTime(_ interval: TimeInterval) -> String {
         return Formatters.durationFormatter.string(from: interval.rounded()) ?? "00:00:00"
-    }
-    
-    deinit {
-        // Ensure timer is invalidated when the ViewModel is deallocated
-        timer?.invalidate()
     }
 }
