@@ -127,7 +127,6 @@ struct ContentView: View {
                             ProjectDisclosureGroup(
                                 project: group.key,
                                 sessions: group.value, // Pass the value directly
-                                timerViewModel: timerViewModel,
                                 sessionToEdit: $sessionToEdit,
                                 deleteAction: deleteSession
                             )
@@ -157,19 +156,6 @@ struct ContentView: View {
             guard !didRestoreProject else { return }
             timerViewModel.restoreSelectedProject(context: modelContext)
             didRestoreProject = true
-        }
-    }
-    
-    private func saveSession() {
-        if let sessionData = timerViewModel.stopTimer() {
-            let newSession = WorkSession(
-                duration: sessionData.duration,
-                endTime: sessionData.endTime,
-                project: timerViewModel.selectedProject
-            )
-            modelContext.insert(newSession)
-            // Saving is generally automatic with SwiftData, but explicit save is fine too
-            // try? modelContext.save()
         }
     }
     
@@ -231,7 +217,6 @@ struct ProjectDisclosureGroup: View {
     @Environment(\.modelContext) private var modelContext
     let project: Project?
     let sessions: [WorkSession]
-    @ObservedObject var timerViewModel: TimerViewModel
     @Binding var sessionToEdit: WorkSession?
     let deleteAction: (WorkSession) -> Void
     
@@ -261,8 +246,7 @@ struct ProjectDisclosureGroup: View {
             } else {
                 ForEach(sessions) { session in
                     WorkSessionRow(
-                        session: session,
-                        timerViewModel: timerViewModel
+                        session: session
                     )
                     .draggable(WorkSessionTransferable(id: session.persistentModelID))
                     .contextMenu {
@@ -285,7 +269,7 @@ struct ProjectDisclosureGroup: View {
                     .foregroundStyle(isNoProjectAndEmpty ? .secondary : .primary)
                 Spacer()
                 if project != nil {
-                    Text(timerViewModel.formatTime(totalDuration))
+                    Text(Formatters.durationFormatter.string(from: totalDuration) ?? "0:00:00")
                         .font(.system(.caption, design: .monospaced))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
@@ -332,11 +316,10 @@ struct ProjectDisclosureGroup: View {
 
 struct WorkSessionRow: View {
     let session: WorkSession
-    @ObservedObject var timerViewModel: TimerViewModel // Pass needed formatters
     
     var body: some View {
         HStack {
-            Text(timerViewModel.formatTime(session.duration))
+            Text(Formatters.durationFormatter.string(from: session.duration) ?? "0:00:00")
                 .font(.system(.body, design: .monospaced))
             
             Spacer()
