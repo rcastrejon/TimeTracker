@@ -31,7 +31,7 @@ struct WorkTimerApp: App {
     
     var body: some Scene {
         // Main Application Window (can be closed)
-        Window("Work Timer", id: "main") {
+        Window("Work Timer", id: AppConstants.WindowID.mainWindow) {
             ContentView()
                 .environmentObject(timerViewModel) // Inject the ViewModel
                 .frame(minWidth: 400, minHeight: 400)

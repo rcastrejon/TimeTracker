@@ -176,44 +176,6 @@ struct ContentView: View {
     }
 }
 
-struct AddProjectView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) var dismiss
-    @State private var projectName: String = ""
-    
-    var body: some View {
-        VStack(spacing: 15) {
-            Text("Add New Project")
-                .font(.title2)
-            
-            TextField("Project Name", text: $projectName)
-                .textFieldStyle(.roundedBorder)
-            
-            HStack {
-                Button("Cancel", role: .cancel) {
-                    dismiss()
-                }
-                Spacer()
-                Button("Save") {
-                    saveProject()
-                    dismiss()
-                }
-                .disabled(projectName.trimmingCharacters(in: .whitespaces).isEmpty)
-                .keyboardShortcut(.defaultAction)
-            }
-        }
-        .padding()
-        .frame(minWidth: 300, idealWidth: 350)
-    }
-    
-    private func saveProject() {
-        let trimmedName = projectName.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty else { return }
-        let newProject = Project(name: trimmedName)
-        modelContext.insert(newProject)
-    }
-}
-
 struct ProjectDisclosureGroup: View {
     @Environment(\.modelContext) private var modelContext
     let project: Project?
@@ -308,8 +270,6 @@ struct ProjectDisclosureGroup: View {
             print("Session already belongs to this project group.")
             return
         }
-        
-        print("Moving session \(sessionToMove.id) to project: \(targetProject?.name ?? "None")")
         
         sessionToMove.project = targetProject
     }

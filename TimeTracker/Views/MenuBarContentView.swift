@@ -61,7 +61,7 @@ struct MenuBarContentView: View {
             NSApplication.shared.setActivationPolicy(.regular)
             
             // Now open the window
-            openWindow(id: "main")
+            openWindow(id: AppConstants.WindowID.mainWindow)
             
             // This makes the app (and its newly opened/focused window) active.
             // 'ignoringOtherApps: true' is generally preferred for direct user actions

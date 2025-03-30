@@ -20,5 +20,6 @@ struct WorkSessionTransferable: Codable, Transferable {
 }
 
 extension UTType {
-    static var workSessionID: UTType = UTType(exportedAs: "dev.rcastrejon.TimeTracker.worksessionid")
+    private static let workSessionIdentifier = "dev.rcastrejon.TimeTracker.worksessionid"
+    static var workSessionID: UTType = UTType(exportedAs: workSessionIdentifier)
 }

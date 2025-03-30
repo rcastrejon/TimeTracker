@@ -19,6 +19,8 @@ enum TimerState: String {
 // ObservableObject to manage the timer state and logic
 @MainActor
 class TimerViewModel: ObservableObject {
+    private static let minimumSessionDuration: TimeInterval = 1.0
+
     @Published var showShortSessionAlert = false
     
     @Published var timerState: TimerState = .stopped
@@ -155,7 +157,7 @@ class TimerViewModel: ObservableObject {
         elapsedTime = 0.0
         accumulatedTimeBeforePause = 0.0
         
-        if finalDuration >= 1.0 {
+        if finalDuration >= TimerViewModel.minimumSessionDuration {
             return (duration: finalDuration, endTime: finalEndTime)
         } else {
             self.showShortSessionAlert = true
