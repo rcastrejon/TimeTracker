@@ -143,6 +143,11 @@ struct ContentView: View {
             }
         }
         .padding()
+        .alert("Session Not Saved", isPresented: $timerViewModel.showShortSessionAlert) {
+            Button("OK") {}
+        } message: {
+            Text("The work session was less than 1 second long and was not saved.")
+        }
         .sheet(item: $sessionToEdit) { session in
             EditSessionView(session: session)
                 .environment(\.modelContext, modelContext)

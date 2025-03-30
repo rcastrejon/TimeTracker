@@ -67,7 +67,6 @@ struct MenuBarContentView: View {
             // 'ignoringOtherApps: true' is generally preferred for direct user actions
             // like clicking a button to open something.
             NSApplication.shared.activate(ignoringOtherApps: true)
-            print("MenuBar: Set activation policy to regular (showing Dock icon).")
         }
         
         Divider()

@@ -19,6 +19,8 @@ enum TimerState: String {
 // ObservableObject to manage the timer state and logic
 @MainActor
 class TimerViewModel: ObservableObject {
+    @Published var showShortSessionAlert = false
+    
     @Published var timerState: TimerState = .stopped
     @Published var elapsedTime: TimeInterval = 0.0
     @Published var selectedProject: Project? = nil {
@@ -156,7 +158,7 @@ class TimerViewModel: ObservableObject {
         if finalDuration >= 1.0 {
             return (duration: finalDuration, endTime: finalEndTime)
         } else {
-            print("Session too short, not saving.")
+            self.showShortSessionAlert = true
             return nil
         }
     }
