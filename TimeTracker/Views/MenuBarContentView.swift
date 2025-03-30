@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct MenuBarContentView: View {
-    @EnvironmentObject var viewModel: TimerViewModel
+    @Environment(TimerViewModel.self) private var viewModel
     @Environment(\.openWindow) var openWindow
     @Environment(\.modelContext) private var modelContext
     

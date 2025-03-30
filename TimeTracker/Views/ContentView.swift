@@ -10,7 +10,7 @@ import SwiftData
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    @EnvironmentObject var timerViewModel: TimerViewModel
+    @Environment(TimerViewModel.self) private var timerViewModel
     @Environment(\.modelContext) private var modelContext
     
     @Query(sort: \WorkSession.endTime, order: .reverse) private var workSessions: [WorkSession]
@@ -52,7 +52,7 @@ struct ContentView: View {
             
             HStack {
                 Text("Project:")
-                Picker("Select Project", selection: $timerViewModel.selectedProject) {
+                Picker("Select Project", selection: Bindable(timerViewModel).selectedProject) {
                     Text("None").tag(Project?.none) // Option for no project
                     ForEach(projects) { project in
                         // Use .tag(Optional(project)) for optional binding
@@ -143,7 +143,7 @@ struct ContentView: View {
             }
         }
         .padding()
-        .alert("Session Not Saved", isPresented: $timerViewModel.showShortSessionAlert) {
+        .alert("Session Not Saved", isPresented: Bindable(timerViewModel).showShortSessionAlert) {
             Button("OK") {}
         } message: {
             Text("The work session was less than 1 second long and was not saved.")
@@ -316,7 +316,7 @@ struct WorkSessionRow: View {
         
         
         return ContentView()
-            .environmentObject(previewViewModel)
+            .environment(previewViewModel)
             .modelContainer(container)
             .frame(width: 500, height: 600)
     } catch {

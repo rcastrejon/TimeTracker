@@ -11,8 +11,7 @@ import SwiftData
 @main
 struct WorkTimerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    // Create a single instance of the ViewModel for the entire app lifecycle
-    @StateObject private var timerViewModel = TimerViewModel()
+    @State private var timerViewModel = TimerViewModel()
     
     // SwiftData model container
     var sharedModelContainer: ModelContainer = {
@@ -33,10 +32,10 @@ struct WorkTimerApp: App {
         // Main Application Window (can be closed)
         Window("Work Timer", id: AppConstants.WindowID.mainWindow) {
             ContentView()
-                .environmentObject(timerViewModel) // Inject the ViewModel
+                .environment(timerViewModel)
                 .frame(minWidth: 400, minHeight: 400)
+                .modelContainer(sharedModelContainer)
         }
-        .modelContainer(sharedModelContainer)
         // Prevent creating new windows via the File menu (keeps single main window)
         .commands {
             CommandGroup(replacing: .newItem) {}
@@ -47,7 +46,7 @@ struct WorkTimerApp: App {
             // --- Menu Content ---
             // Instantiate the dedicated view struct
             MenuBarContentView()
-                .environmentObject(timerViewModel) // Inject the ViewModel
+                .environment(timerViewModel)
                 .modelContainer(sharedModelContainer)
         } label: {
             // --- Menu Bar Icon/Label ---
@@ -56,10 +55,8 @@ struct WorkTimerApp: App {
         .menuBarExtraStyle(.menu)
     }
     
-    // Helper ViewBuilder for Menu Bar Label
     @ViewBuilder
     private func menuBarLabel() -> some View {
-        // Directly use the switch to return the appropriate Image view
         switch timerViewModel.timerState {
         case .stopped:
             Image(systemName: "timer")
