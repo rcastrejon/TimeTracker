@@ -79,9 +79,6 @@ struct EditSessionView: View {
                     session.startTime = editStartTime
                     session.endTime = editEndTime
                     session.project = editProject
-                    // SwiftData automatically tracks changes to 'session' now.
-                    // No explicit save needed here unless you want finer control/error handling.
-                    // try? modelContext.save() // Optional: If explicit saving is desired
                     
                     dismiss()
                 }

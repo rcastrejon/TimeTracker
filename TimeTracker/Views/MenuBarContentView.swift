@@ -39,7 +39,6 @@ struct MenuBarContentView: View {
             if let sessionData = viewModel.stopTimer() {
                 let newSession = WorkSession(duration: sessionData.duration, endTime: sessionData.endTime, project: viewModel.selectedProject)
                 modelContext.insert(newSession)
-                // Optional: try? modelContext.save()
             }
         }
         .disabled(viewModel.timerState == .stopped)

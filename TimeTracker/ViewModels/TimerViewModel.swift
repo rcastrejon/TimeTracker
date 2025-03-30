@@ -22,7 +22,6 @@ class TimerViewModel: ObservableObject {
     @Published var timerState: TimerState = .stopped
     @Published var elapsedTime: TimeInterval = 0.0
     @Published var selectedProject: Project? = nil {
-        // Use didSet to automatically save when the property changes
         didSet {
             saveLastSelectedProjectID()
         }
@@ -41,21 +40,17 @@ class TimerViewModel: ObservableObject {
     private func loadLastSelectedProjectID() {
         if let uuidString = UserDefaults.standard.string(forKey: UserDefaults.Keys.lastSelectedProjectID) {
             self.lastSelectedProjectID = UUID(uuidString: uuidString)
-            print("Loaded last project ID: \(uuidString)")
         } else {
             self.lastSelectedProjectID = nil
-            print("No last project ID found in UserDefaults.")
         }
     }
     
     private func saveLastSelectedProjectID() {
         if let projectID = selectedProject?.id {
             UserDefaults.standard.set(projectID.uuidString, forKey: UserDefaults.Keys.lastSelectedProjectID)
-            print("Saved last project ID: \(projectID.uuidString)")
         } else {
             // If 'None' is selected, remove the key
             UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
-            print("Removed last project ID from UserDefaults (None selected).")
         }
     }
     
@@ -63,17 +58,14 @@ class TimerViewModel: ObservableObject {
     /// Call this method once the ModelContext is available (e.g., in a View's onAppear).
     func restoreSelectedProject(context: ModelContext) {
         guard let projectID = self.lastSelectedProjectID else {
-            print("No project ID to restore.")
             return
         }
         
         // Prevent re-fetching if already set (might happen if onAppear fires multiple times)
         guard selectedProject?.id != projectID else {
-            print("Project \(projectID) already selected.")
             return
         }
         
-        print("Attempting to restore project with ID: \(projectID)")
         // Fetch the project corresponding to the stored ID
         let fetchDescriptor = FetchDescriptor<Project>(
             predicate: #Predicate { $0.id == projectID }
@@ -82,21 +74,16 @@ class TimerViewModel: ObservableObject {
         do {
             let projects = try context.fetch(fetchDescriptor)
             if let projectToRestore = projects.first {
-                // No DispatchQueue needed due to @MainActor
                 self.selectedProject = projectToRestore
-                print("Successfully restored project: \(projectToRestore.name)")
             } else {
-                print("Project with ID \(projectID) not found in database. Clearing saved ID.")
                 UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
                 self.lastSelectedProjectID = nil
-                // No DispatchQueue needed due to @MainActor
                 self.selectedProject = nil
             }
         } catch {
             print("Error fetching project to restore: \(error)")
             UserDefaults.standard.removeObject(forKey: UserDefaults.Keys.lastSelectedProjectID)
             self.lastSelectedProjectID = nil
-            // No DispatchQueue needed due to @MainActor
             self.selectedProject = nil
         }
     }
@@ -161,7 +148,7 @@ class TimerViewModel: ObservableObject {
             // Task is already cancelled/nil in paused state
         }
         
-        stopTimerInternal() // Reset internal state
+        stopTimerInternal()
         
         elapsedTime = 0.0
         accumulatedTimeBeforePause = 0.0
@@ -182,9 +169,10 @@ class TimerViewModel: ObservableObject {
         self.elapsedTime = 0.0
         self.accumulatedTimeBeforePause = 0.0
         
-        stopTimerInternal() // Reset internal state
+        stopTimerInternal()
     }
     
+    /// Reset internal state
     private func stopTimerInternal() {
         // Cancel the task explicitly, though pause/stop should already do it
         timerTask?.cancel()

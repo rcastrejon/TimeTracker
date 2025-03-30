@@ -93,7 +93,6 @@ struct ContentView: View {
                     if let sessionData = timerViewModel.stopTimer() {
                         let newSession = WorkSession(duration: sessionData.duration, endTime: sessionData.endTime, project: timerViewModel.selectedProject)
                         modelContext.insert(newSession)
-                        // Optional: try? modelContext.save() if explicit save desired
                     }
                 }
                 .buttonStyle(.bordered)
@@ -162,14 +161,12 @@ struct ContentView: View {
     private func deleteSession(_ session: WorkSession) {
         withAnimation {
             modelContext.delete(session)
-            // try? modelContext.save()
         }
     }
     
     private func deleteSession(at offsets: IndexSet, in group: [WorkSession]) {
         withAnimation {
             offsets.map { group[$0] }.forEach(modelContext.delete)
-            // try? modelContext.save()
         }
     }
 }
@@ -209,7 +206,6 @@ struct AddProjectView: View {
         guard !trimmedName.isEmpty else { return }
         let newProject = Project(name: trimmedName)
         modelContext.insert(newProject)
-        // Optional: try? modelContext.save() for explicit save/error handling
     }
 }
 
